@@ -1,60 +1,50 @@
-const http = require('http')
-const getUsers = require('./modules/users')
+// Домашка 4
+const express = require('express');
+const dotenv = require('dotenv');
+const userRouter = require('./routes/users.js');
+const bookRouter = require ('./routes/books.js')
+const loggerOne = require('./middlewares/loggerOne.js');
+const cors = require('cors')
+const bodyParser = require('body-parser')
+const mongoose = require('mongoose')
 
+dotenv.config();
 
-const port = 3003;
-const hostname ="http://127.0.0.1";
+const app = express();
 
-const server = http.createServer((request, response) => {
- 
-  const ipAddress = "http://127.0.0.1";
-  const url = new URL(request.url, ipAddress);
-  const userName = url.searchParams.get("hello");
+const {
+PORT = 3005,
+API_URL = "http://127.0.0.1",
+MONGO_URL = "mongodb://127.0.0.1:27017/backend",
+} = process.env;
 
-  if (userName) {
-    response.statusCode = 200;
-    response.statusMessage = "ok";
-    response.setHeader("Content-Type", "text/plain");
-    response.write(`Hello, my friend ${userName}`);
-    response.end();
-    return;
-  };
-
- switch (request.url) {
-    case "/users":
-      response.statusCode = 200;
-      response.statusMessage = "OK";
-      response.setHeader("Content-Type", "application/json");
-      response.write(getUsers());
-      response.end();
-      break;
-
-case "/?hello":
-  response.statusCode = 400;
-  response.statusMessage = "Bad Request";
-  response.setHeader("Content-Type", "text/plain");
-  response.write(`Enter a name`);
-  response.end();
-  break;
-
-case "/":
-  response.statusCode = 200;
-  response.statusMessage = "OK";
-  response.setHeader("Content-Type", "text/plain");
-  response.write(`Hello world`);
-  response.end();
-  break;
-
-default:
-  response.statusCode = 500;
-  response.statusMessage = "Internal Server Error";
-  response.setHeader("Content-Type", "text/plain");
-  response.write("wrong");
-  response.end();
-  break;
-}
+mongoose.connect(MONGO_URL)
+.then (() => {console.log("Connected to Mongo!")
 })
-
-server.listen(port, () => {
-  console.log(`Сервер запущен по адресу ${hostname}:${port}/`);
+.catch((error) => {console.log("<<Mongoo connection error>>", error)
 });
+
+
+const helloWorld = (request, response) => {
+    response.status(200);
+    response.send("Hello , World!");
+}
+
+app.use(cors());
+app.use(bodyParser.json());
+app.get( '/', helloWorld);
+
+app.post('/', (request, response) => {
+    response.status(200);
+    response.send("Hello from Post!");
+});
+
+
+app.use(loggerOne);
+app.use(userRouter);
+app.use(bookRouter);
+
+
+app.listen(PORT, () => {
+    console.log(`Сервер запущен по адресу ${API_URL}:${PORT}`)
+})
